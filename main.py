@@ -21,8 +21,17 @@ def load_klines_from_binance():
         response = requests.get(url, params=params)
         data = response.json()
 
-        # 转换为 DataFrame
-        df = pd.DataFrame(data, columns=["Timestamp", "Open", "High", "Low", "Close", "Volume"])
+        # 提取必要的列（Timestamp, Open, High, Low, Close, Volume）
+        df = pd.DataFrame(data, columns=[
+            "Timestamp", "Open", "High", "Low", "Close", "Volume",
+            "Close Time", "Quote Asset Volume", "Number of Trades",
+            "Taker Buy Base Asset Volume", "Taker Buy Quote Asset Volume", "Ignore"
+        ])
+
+        # 只保留必要的列
+        df = df[["Timestamp", "Open", "High", "Low", "Close", "Volume"]]
+
+        # 将 Timestamp 转换为日期时间格式
         df["Timestamp"] = pd.to_datetime(df["Timestamp"], unit="ms")
         df.set_index("Timestamp", inplace=True)
 
@@ -35,10 +44,19 @@ def load_klines_from_binance():
 def load_klines_from_file(file_path):
     try:
         data = pd.read_csv(file_path)
-        if "Date" not in data.columns:
-            raise ValueError("文件中缺少 'Date' 列")
-        data["Date"] = pd.to_datetime(data["Date"])
-        data.set_index("Date", inplace=True)
+        # 检查是否存在 "Timestamp" 列
+        if "Timestamp" not in data.columns:
+            raise ValueError("文件中缺少 'Timestamp' 列")
+
+        # 将 "Timestamp" 列解析为日期时间格式
+        data["Timestamp"] = pd.to_datetime(data["Timestamp"], unit="ms")
+        data.set_index("Timestamp", inplace=True)
+
+        # 确保数据包含必要的列
+        required_columns = ["Open", "High", "Low", "Close", "Volume"]
+        if not all(col in data.columns for col in required_columns):
+            raise ValueError(f"文件中缺少必要的列：{required_columns}")
+
         return data
     except Exception as e:
         print(f"Error loading data from file: {e}")
@@ -83,7 +101,9 @@ def create_gui():
 
             for index, row in data.iterrows():
                 treeview.insert("", "end", values=(
-                index.strftime("%Y-%m-%d %H:%M"), row["Open"], row["High"], row["Low"], row["Close"], row["Volume"]))
+                    index.strftime("%Y-%m-%d %H:%M"),
+                    row["Open"], row["High"], row["Low"], row["Close"], row["Volume"]
+                ))
 
             scrollbar = ttk.Scrollbar(root, orient="vertical", command=treeview.yview)
             treeview.configure(yscrollcommand=scrollbar.set)
@@ -99,8 +119,7 @@ def create_gui():
 
             search_column_var = tk.StringVar()
             search_column_var.set("所有列")  # 默认值
-            search_column_menu = ttk.OptionMenu(search_frame, search_column_var, "所有列", "Timestamp", "Open", "High",
-                                                "Low", "Close", "Volume")
+            search_column_menu = ttk.OptionMenu(search_frame, search_column_var, "所有列", *columns)
             search_column_menu.pack(side="left", padx=5)
 
             def search_data():
@@ -118,7 +137,9 @@ def create_gui():
                             treeview.see(item)
                             break
                     else:
-                        if search_text.lower() in str(values[treeview.columns.index(search_column)]).lower():
+                        # 获取列索引并进行匹配
+                        column_index = columns.index(search_column)
+                        if search_text.lower() in str(values[column_index]).lower():
                             treeview.selection_set(item)
                             treeview.see(item)
                             break
