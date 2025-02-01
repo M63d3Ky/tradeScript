@@ -7,6 +7,7 @@ import requests
 import os
 import json
 from tkcalendar import DateEntry
+import tkinter.messagebox as messagebox
 
 # 保存用户配置文件的路径
 CONFIG_FILE = "config.json"
@@ -70,6 +71,7 @@ def load_klines_from_binance(start_time=None, end_time=None, interval="1m"):
         return df
     except Exception as e:
         print(f"Error loading data from Binance API: {e}")
+        messagebox.showerror("错误", f"加载数据时出错: {e}")
         return None
 
 class DataLoader:
@@ -81,6 +83,10 @@ class DataLoader:
         self.current_batch = 0
 
     def load_data(self, start_time=None, end_time=None, interval="1m"):
+        # 清空旧数据
+        for item in self.treeview.get_children():
+            self.treeview.delete(item)
+
         self.data = load_klines_from_binance(start_time, end_time, interval)
         if self.data is None:
             return
@@ -108,7 +114,7 @@ class DataLoader:
         if self.current_batch < self.total_batches:
             self.root.after(100, self.update_data)
         else:
-            print("Data loading completed")
+            messagebox.showinfo("提示", "数据加载完成")
 
 def create_gui():
     root = tk.Tk()
@@ -143,14 +149,14 @@ def create_gui():
             start_timestamp = pd.Timestamp(start)
             end_timestamp = pd.Timestamp(end)
             if start_timestamp >= end_timestamp:
-                print("Start date must be earlier than end date")
+                messagebox.showerror("错误", "开始日期必须早于结束日期")
                 return
 
             # 启动数据加载线程
             data_loader = DataLoader(root, treeview)
             threading.Thread(target=lambda: data_loader.load_data(start, end, interval)).start()
         except Exception as e:
-            print(f"Error selecting time range: {e}")
+            messagebox.showerror("错误", f"选择时间范围时出错: {e}")
 
     # 时间范围选择框
     time_frame = tk.Frame(root)
