@@ -144,17 +144,12 @@ class TradingViewGUI:
             messagebox.showerror("错误", f"选择时间范围时出错: {e}")
 
     def plot_kline(self):
+        if self.data is None or self.data.empty:
+            messagebox.showerror("错误", "没有数据可供绘制。")
+            return
+
         try:
-            # 构造起始时间和结束时间
-            start = f"{self.start_year.get()}-{self.start_month.get()}-{self.start_day.get()} {self.start_hour.get()}:{self.start_minute.get()}"
-            end = f"{self.end_year.get()}-{self.end_month.get()}-{self.end_day.get()} {self.end_hour.get()}:{self.end_minute.get()}"
-            interval = self.interval_var.get()
-
-            # 加载数据
-            from data_loader import load_klines_from_binance
-            data = load_klines_from_binance(start, end, interval)
-
-            # 绘制 K 线图
-            plot_kline(data)
+            from kline_plotter import plot_kline
+            plot_kline(self.data, self.root)
         except Exception as e:
             messagebox.showerror("错误", f"绘制 K 线图时出错: {e}")
