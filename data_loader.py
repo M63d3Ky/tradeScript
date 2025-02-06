@@ -1,6 +1,8 @@
 import pandas as pd
 import requests
 import tkinter.messagebox as messagebox
+from kline_plotter import plot_kline
+
 
 def load_klines_from_binance(start_time=None, end_time=None, interval="1m"):
     try:
@@ -104,4 +106,4 @@ class DataLoader:
         if self.current_batch < self.total_batches:
             self.root.after(100, self.update_data)
         else:
-            messagebox.showinfo("提示", "数据加载完成")
+            print("Data loading completed")

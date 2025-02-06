@@ -4,6 +4,8 @@ from tkcalendar import DateEntry
 import pandas as pd
 import threading
 import tkinter.messagebox as messagebox
+from data_loader import DataLoader
+from kline_plotter import plot_kline
 
 class TradingViewGUI:
     def __init__(self, root):
@@ -90,6 +92,9 @@ class TradingViewGUI:
         search_column_menu = ttk.Combobox(search_frame, textvariable=search_column_var, values=["所有列", "Timestamp", "Open", "High", "Low", "Close", "Volume"])
         search_column_menu.pack(side="left", padx=5)
 
+        # 添加绘制 K 线图的按钮
+        tk.Button(time_frame, text="Plot K-line", command=self.plot_kline).grid(row=3, column=0, padx=5)
+
         def search_data():
             search_text = search_var.get().strip()
             search_column = search_column_var.get()  # 获取用户选择的列
@@ -137,3 +142,19 @@ class TradingViewGUI:
             threading.Thread(target=lambda: data_loader.load_data(start, end, interval)).start()
         except Exception as e:
             messagebox.showerror("错误", f"选择时间范围时出错: {e}")
+
+    def plot_kline(self):
+        try:
+            # 构造起始时间和结束时间
+            start = f"{self.start_year.get()}-{self.start_month.get()}-{self.start_day.get()} {self.start_hour.get()}:{self.start_minute.get()}"
+            end = f"{self.end_year.get()}-{self.end_month.get()}-{self.end_day.get()} {self.end_hour.get()}:{self.end_minute.get()}"
+            interval = self.interval_var.get()
+
+            # 加载数据
+            from data_loader import load_klines_from_binance
+            data = load_klines_from_binance(start, end, interval)
+
+            # 绘制 K 线图
+            plot_kline(data)
+        except Exception as e:
+            messagebox.showerror("错误", f"绘制 K 线图时出错: {e}")
