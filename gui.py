@@ -140,11 +140,9 @@ class TradingViewGUI:
             # 加载数据
             from data_loader import DataLoader
             data_loader = DataLoader(self.root, self.treeview)
-            self.data = data_loader.load_data(start, end, interval)  # 将加载的数据赋值给 self.data
+            self.data = data_loader.load_data(start, end, interval)
 
-            if self.data is not None:
-                messagebox.showinfo("提示", "数据加载完成")
-            else:
+            if self.data is None:
                 messagebox.showerror("错误", "数据加载失败")
         except Exception as e:
             messagebox.showerror("错误", f"选择时间范围时出错: {e}")

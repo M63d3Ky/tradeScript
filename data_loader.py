@@ -106,4 +106,4 @@ class DataLoader:
         if self.current_batch < self.total_batches:
             self.root.after(100, self.update_data)
         else:
-            messagebox.showinfo("提示", "数据加载完成")  # 使用弹出框显示提示信息
+            messagebox.showinfo("提示", "数据加载完成")  # 只显示成功提示框
