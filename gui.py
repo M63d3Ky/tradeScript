@@ -4,6 +4,8 @@ from tkcalendar import DateEntry
 import pandas as pd
 import threading
 import tkinter.messagebox as messagebox
+from data_loader import DataLoader
+from kline_plotter import plot_kline
 
 class TradingViewGUI:
     def __init__(self, root):
@@ -11,6 +13,7 @@ class TradingViewGUI:
         self.root.title("K 线数据加载器")
 
         self.treeview = None
+        self.data = None  # 初始化 data 属性为 None
 
         # 时间范围选择
         self.start_year = tk.StringVar(value="2024")
@@ -90,6 +93,9 @@ class TradingViewGUI:
         search_column_menu = ttk.Combobox(search_frame, textvariable=search_column_var, values=["所有列", "Timestamp", "Open", "High", "Low", "Close", "Volume"])
         search_column_menu.pack(side="left", padx=5)
 
+        # 添加绘制 K 线图的按钮
+        tk.Button(time_frame, text="Plot K-line", command=self.plot_kline).grid(row=3, column=0, padx=5)
+
         def search_data():
             search_text = search_var.get().strip()
             search_column = search_column_var.get()  # 获取用户选择的列
@@ -131,9 +137,23 @@ class TradingViewGUI:
                 messagebox.showerror("错误", "开始日期必须早于结束日期")
                 return
 
-            # 启动数据加载线程
+            # 加载数据
             from data_loader import DataLoader
             data_loader = DataLoader(self.root, self.treeview)
-            threading.Thread(target=lambda: data_loader.load_data(start, end, interval)).start()
+            self.data = data_loader.load_data(start, end, interval)
+
+            if self.data is None:
+                messagebox.showerror("错误", "数据加载失败")
         except Exception as e:
             messagebox.showerror("错误", f"选择时间范围时出错: {e}")
+
+    def plot_kline(self):
+        if self.data is None or self.data.empty:
+            messagebox.showerror("错误", "没有数据可供绘制。")
+            return
+
+        try:
+            from kline_plotter import plot_kline
+            plot_kline(self.data, self.root)
+        except Exception as e:
+            messagebox.showerror("错误", f"绘制 K 线图时出错: {e}")
